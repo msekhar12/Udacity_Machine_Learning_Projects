@@ -24,6 +24,8 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
+        self.num_of_trials = 0
+        self.second_trials = 1
 
 
     def reset(self, destination=None, testing=False):
@@ -38,7 +40,19 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Update epsilon using a decay function of your choice
-        self.epsilon = self.epsilon - 0.001
+        #self.epsilon = self.epsilon - 0.0001
+        #self.epsilon = self.epsilon - 0.0005
+        #self.epsilon = self.epsilon - 0.05
+        self.num_of_trials = self.num_of_trials + 1
+        #self.epsilon = (0.99)**self.num_of_trials
+        if self.num_of_trials > 300:
+            #self.epsilon = (0.99)**self.num_of_trials #Uncomment the below 2 lines to achieve A and A+ ratings.
+            #self.epsilon = (0.99)**self.second_trials
+            self.second_trials = self.second_trials + 1
+            self.epsilon = self.epsilon - 0.005
+            
+        #if self.alpha <= 0:
+        #   self.epsilon = 0.05
         print "epsilon:{}".format(self.epsilon)
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
@@ -77,7 +91,13 @@ class LearningAgent(Agent):
         ###########
         # Calculate the maximum Q-value of all actions for a given state
 
-        maxQ = None
+        #maxQ = None
+        #print "sekhar: {}".format(state)
+        maxQ = max(self.Q[state].values())
+        max_state = max(self.Q[state].iterkeys(), key=(lambda key: self.Q[state]))
+        print "maxQ:{} and max_state:{}".format(maxQ,max_state)
+        return maxQ 
+
 
         return maxQ 
 
@@ -116,6 +136,29 @@ class LearningAgent(Agent):
         #   Otherwise, choose an action with the highest Q-value for the current state
         #self.learning=True
         
+        ##This code commented below is working. 
+        ## But I want to try for random actions, if more than one action has 0 value, and the returned action is a zero valued action       
+        #if self.learning:
+        #        if np.random.uniform(low=0.0,high=1.0) <= self.epsilon:   
+        #           action = np.random.choice(self.valid_actions)
+        #           print "Took random action -{} due to epsilon.".format(action)  
+        #        else:
+        #             if state in self.Q:
+        #                action=max(self.Q[state], key=lambda key: self.Q[state][key])
+        #                
+        #                print "Q Key found and took action -{}".format(action)               
+        #             else:
+        #                action = np.random.choice(self.valid_actions)
+        #                print "Took random action -{} due to Q Key not found.".format(action)               
+        #else:
+        #    if state in self.Q:
+        #       action=max(self.Q[state], key=lambda key: self.Q[state][key])
+        #       print "Q Key found and took action -{}".format(action)               
+        #    else:
+        #       action = np.random.choice(self.valid_actions)
+        #       print "Took random action -{} due to Q Key not found.".format(action)              
+
+
         if self.learning:
                 if np.random.uniform(low=0.0,high=1.0) <= self.epsilon:   
                    action = np.random.choice(self.valid_actions)
@@ -123,6 +166,15 @@ class LearningAgent(Agent):
                 else:
                      if state in self.Q:
                         action=max(self.Q[state], key=lambda key: self.Q[state][key])
+                        if self.Q[state][action] == 0:
+                            ##Get the list of all actions with zero values
+                            print "self.Q[state]:{}".format(self.Q[state])
+                            zero_actions = [k for (k,v) in self.Q[state].iteritems() if v == 0]
+
+                            if len(zero_actions) > 1:
+                                print "zero_actions.{}".format(zero_actions)
+                                action = np.random.choice(zero_actions)
+                                print "action chosen from zero valued actions randomly:{}".format(action)
                         print "Q Key found and took action -{}".format(action)               
                      else:
                         action = np.random.choice(self.valid_actions)
@@ -130,10 +182,20 @@ class LearningAgent(Agent):
         else:
             if state in self.Q:
                action=max(self.Q[state], key=lambda key: self.Q[state][key])
+               if self.Q[state][action] == 0:
+                  ##Get the list of all actions with zero values
+                  print "self.Q[state]:{}".format(self.Q[state])
+                  zero_actions = [k for (k,v) in self.Q[state].iteritems() if v == 0]
+                  
+                  if len(zero_actions) > 1:
+                            print "zero_actions.{}".format(zero_actions)
+                            action = np.random.choice(zero_actions)
+                            print "action chosen from zero valued actions randomly:{}".format(action)
                print "Q Key found and took action -{}".format(action)               
             else:
                action = np.random.choice(self.valid_actions)
-               print "Took random action -{} due to Q Key not found.".format(action)               
+               print "Took random action -{} due to Q Key not found.".format(action)              
+
         return action
 
 
@@ -159,9 +221,9 @@ class LearningAgent(Agent):
               print "BEFORE: self.Q[state][action].{}".format(self.Q[state][action])
               self.Q[state][action] = self.Q[state][action] + self.alpha * (reward - self.Q[state][action])
               print "AFTER: self.Q[state][action].{}".format(self.Q[state][action])
-              self.alpha = self.alpha - 0.0001
-              if self.alpha <= 0:
-                 self.alpha = 0.0001 
+              #self.alpha = self.alpha - 0.00001
+              #if self.alpha <= 0:
+              #   self.alpha = 0.0001 
            
         
         #print "latest reward:{}".format(reward)
@@ -220,7 +282,7 @@ def run():
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
     #sim = Simulator(env)
-    sim = Simulator(env,update_delay=0.001,log_metrics=True,display=True)
+    sim = Simulator(env,update_delay=0.001,log_metrics=True,display=True,optimized=True)
     
     ##############
     # Run the simulator
